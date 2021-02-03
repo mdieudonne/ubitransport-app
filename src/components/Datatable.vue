@@ -2,6 +2,7 @@
   <v-data-table
       :headers="headers"
       :items="students"
+      :server-items-length="totalItems"
       sort-by="calories"
       class="elevation-1"
       @update:page="onChangePage"
@@ -30,7 +31,7 @@
                 v-bind="attrs"
                 v-on="on"
             >
-              New Item
+              Nouvel élève
             </v-btn>
           </template>
           <v-card>
@@ -39,7 +40,7 @@
             </v-card-title>
 
             <v-card-text>
-              <v-form v-model="valid">
+              <v-form ref="form" v-model="valid" lazy-validation>
               <v-container>
                 <v-row>
                   <v-col
@@ -72,7 +73,7 @@
                       <template v-slot:activator="{ on, attrs }">
                         <v-text-field
                             v-model="editedItem.birthdate"
-                            label="Picker without buttons"
+                            label="Date de naissance"
                             prepend-icon="mdi-calendar"
                             readonly
                             v-bind="attrs"
@@ -82,6 +83,7 @@
                       <v-date-picker
                           v-model="editedItem.birthdate"
                           @input="menu = false"
+                          show-week
                           :max="getMax"
                           :min="getMin"
                       ></v-date-picker>
@@ -144,7 +146,7 @@
 
 <script>
 import axios from "axios";
-import {addYears, format} from 'date-fns';
+import {addYears, format, parseISO} from 'date-fns';
 
 export default {
   name: "Datatable",
@@ -159,20 +161,23 @@ export default {
       },
       {text: 'Prénom', value: 'firstname'},
       {text: 'Date de naissance', value: 'birthdate'},
+      {text: 'Actions', value: 'actions', sortable: false},
     ],
     students: [],
     editedIndex: -1,
+    todayDate: new Date(),
     editedItem: {
       lastname: '',
       firstname: '',
-      birthdate: '',
+      birthdate: null,
     },
     defaultItem: {
       lastname: '',
       firstname: '',
-      birthdate: '',
+      birthdate: null,
     },
-    itemsPerPage: 20,
+    totalItems: 0,
+    itemsPerPage: 5,
     page: 1,
     menu: false,
     valid: false,
@@ -180,7 +185,6 @@ export default {
       v => !!v || 'Une valeur est requise',
       v => v.length <= 10 || 'La valeur ne peut être supérieure à 50 caractères',
     ],
-    todayDate: new Date()
   }),
 
   computed: {
@@ -219,7 +223,11 @@ export default {
             page: this.page
           }
         })
-        this.students = response.data.students
+        this.students = response.data.students.map(student => ({
+          ...student,
+          birthdate: this.formatDate(student.birthdate),
+        }))
+        this.totalItems = response.data.totalItems
         console.log(this.students)
       } catch (err) {
         console.log(err.message)
@@ -228,17 +236,21 @@ export default {
 
     editItem(item) {
       this.editedIndex = this.students.indexOf(item)
-      this.editedItem = {...item}
+      this.editedItem = Object.assign({}, item)
       this.dialog = true
     },
 
     deleteItem(item) {
       this.editedIndex = this.students.indexOf(item)
-      this.editedItem = {...item}
+      this.editedItem = Object.assign({}, item)
       this.dialogDelete = true
     },
 
-    deleteItemConfirm() {
+    async deleteItemConfirm() {
+      await axios({
+        method: 'DELETE',
+        url: 'students/' + this.editedItem.id,
+      })
       this.students.splice(this.editedIndex, 1)
       this.closeDelete()
     },
@@ -246,7 +258,7 @@ export default {
     close() {
       this.dialog = false
       this.$nextTick(() => {
-        this.editedItem = {...this.defaultItem}
+        this.editedItem = Object.assign({}, this.defaultItem)
         this.editedIndex = -1
       })
     },
@@ -254,25 +266,32 @@ export default {
     closeDelete() {
       this.dialogDelete = false
       this.$nextTick(() => {
-        this.editedItem = {...this.defaultItem}
+        this.editedItem = Object.assign({}, this.defaultItem)
         this.editedIndex = -1
       })
     },
 
     async save() {
-      // if (this.editedIndex > -1) {
-      //   this.students[this.editedIndex] = {...this.editedItem}
-      // } else {
-      //   this.students.push(this.editedItem)
-      // }
-
       try {
-        const response = await axios({
-          method: 'POST',
-          url: 'students',
-          data: {...this.editedItem}
-        })
-        console.log(response.data)
+        if (this.editedIndex > -1) {
+          const response = await axios({
+            method: 'PUT',
+            url: 'students/' + this.editedItem.id,
+            data: {...this.editedItem}
+          })
+          response.data.birthdate = this.formatDate(response.data.birthdate),
+          Object.assign(this.students[this.editedIndex], response.data)
+        } else {
+          const response = await axios({
+            method: 'POST',
+            url: 'students',
+            data: {...this.editedItem}
+          })
+          this.students.push({
+            ...response.data,
+            birthdate:this.formatDate(response.data.birthdate),
+          })
+        }
       } catch (err) {
         console.log(err.message)
       }
@@ -287,6 +306,10 @@ export default {
     onChangeItemsPerPage(val) {
       this.itemsPerPage = val
       this.executeQuery()
+    },
+
+    formatDate(date) {
+      return date ? format(date instanceof Date ? date : parseISO(date),'yyyy-MM-dd') : null
     }
   }
 }
