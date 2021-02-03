@@ -228,9 +228,8 @@ export default {
           birthdate: this.formatDate(student.birthdate),
         }))
         this.totalItems = response.data.totalItems
-        console.log(this.students)
       } catch (err) {
-        console.log(err.message)
+        this.onError(err.message)
       }
     },
 
@@ -293,7 +292,7 @@ export default {
           })
         }
       } catch (err) {
-        console.log(err.message)
+        this.onError(err.message)
       }
       this.close()
     },
@@ -310,6 +309,10 @@ export default {
 
     formatDate(date) {
       return date ? format(date instanceof Date ? date : parseISO(date),'yyyy-MM-dd') : null
+    },
+
+    onError(val) {
+      this.$emit('alert:change', val)
     }
   }
 }
