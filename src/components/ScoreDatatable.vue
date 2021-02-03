@@ -13,12 +13,13 @@
       <v-toolbar
           flat
       >
-        <v-toolbar-title>Gestion des note de {{student.lastname}} {{student.firstname}} </v-toolbar-title>
+        <v-toolbar-title>Gestion des note de {{ student.lastname }} {{ student.firstname }}</v-toolbar-title>
         <v-divider
             class="mx-4"
             inset
             vertical
         ></v-divider>
+        <span>Moyenne : {{ averageStudentScore }}</span>
         <v-spacer></v-spacer>
         <v-dialog
             v-model="dialog"
@@ -42,21 +43,21 @@
 
             <v-card-text>
               <v-form ref="form" v-model="valid" lazy-validation>
-              <v-container>
-                <v-row>
-                  <v-col cols="12">
-                    <v-text-field
-                        v-model.number="editedItem.subject"
-                        label="Matière"
-                    ></v-text-field>
-                    <v-text-field
-                        type="number"
-                        v-model.number="editedItem.value"
-                        label="Note"
-                    ></v-text-field>
-                  </v-col>
-                </v-row>
-              </v-container>
+                <v-container>
+                  <v-row>
+                    <v-col cols="12">
+                      <v-text-field
+                          v-model.number="editedItem.subject"
+                          label="Matière"
+                      ></v-text-field>
+                      <v-text-field
+                          type="number"
+                          v-model.number="editedItem.value"
+                          label="Note"
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                </v-container>
               </v-form>
             </v-card-text>
 
@@ -116,8 +117,9 @@ import {addYears, format, parseISO} from 'date-fns';
 
 export default {
   name: "Datatable",
-  props:{
-    student: [Object,String],
+  props: {
+    student: [Object, String],
+    averageStudentScore: Number,
   },
   data: () => ({
     dialog: false,
@@ -150,7 +152,7 @@ export default {
   },
 
   watch: {
-    student(val){
+    student(val) {
       this.executeQuery()
     },
     dialog(val) {
@@ -202,6 +204,7 @@ export default {
         url: 'scores/' + this.editedItem.id,
       })
       this.scores.splice(this.editedIndex, 1)
+      this.$emit('score:update')
       this.closeDelete()
     },
 
@@ -231,7 +234,8 @@ export default {
             data: {...this.editedItem}
           })
           response.data.birthdate = this.formatDate(response.data.birthdate),
-          Object.assign(this.scores[this.editedIndex], response.data)
+              Object.assign(this.scores[this.editedIndex], response.data)
+          this.$emit('score:update')
         } else {
           const response = await axios({
             method: 'POST',
@@ -240,8 +244,9 @@ export default {
           })
           this.scores.push({
             ...response.data,
-            birthdate:this.formatDate(response.data.birthdate),
+            birthdate: this.formatDate(response.data.birthdate),
           })
+          this.$emit('score:update')
         }
       } catch (err) {
         this.onError(err)
@@ -260,7 +265,7 @@ export default {
     },
 
     formatDate(date) {
-      return date ? format(date instanceof Date ? date : parseISO(date),'yyyy-MM-dd') : null
+      return date ? format(date instanceof Date ? date : parseISO(date), 'yyyy-MM-dd') : null
     },
 
     onError(err) {

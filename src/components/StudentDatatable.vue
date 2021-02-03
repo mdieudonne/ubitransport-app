@@ -21,6 +21,7 @@
             inset
             vertical
         ></v-divider>
+        <span>Moyenne de classe : {{averageScore}}</span>
         <v-spacer></v-spacer>
         <v-dialog
             v-model="dialog"
@@ -155,6 +156,9 @@ import {addYears, format, parseISO} from 'date-fns';
 
 export default {
   name: "Datatable",
+  props: {
+    averageScore: Number,
+  },
   data: () => ({
     dialog: false,
     dialogDelete: false,
@@ -257,6 +261,7 @@ export default {
         url: 'students/' + this.editedItem.id,
       })
       this.students.splice(this.editedIndex, 1)
+      this.$emit('student:delete')
       this.closeDelete()
     },
 
@@ -287,6 +292,7 @@ export default {
           })
           response.data.birthdate = this.formatDate(response.data.birthdate),
           Object.assign(this.students[this.editedIndex], response.data)
+
         } else {
           const response = await axios({
             method: 'POST',
@@ -324,9 +330,6 @@ export default {
 
     onError(err) {
       if (err.response) {
-        console.log(err.response.data);
-        console.log(err.response.status);
-        console.log(err.response.headers);
         this.$emit(
             'alert:change',
             '' + err.response.status + ': ' + err.response.data.detail,
