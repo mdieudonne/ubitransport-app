@@ -13,7 +13,7 @@
       <v-toolbar
           flat
       >
-        <v-toolbar-title>Gestion des note de {{ student.lastname }} {{ student.firstname }}</v-toolbar-title>
+        <v-toolbar-title>Gestion des notes de {{ student.lastname }} {{ student.firstname }}</v-toolbar-title>
         <v-divider
             class="mx-4"
             inset
