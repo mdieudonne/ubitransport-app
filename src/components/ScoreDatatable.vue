@@ -1,7 +1,8 @@
 <template>
   <v-data-table
+      v-if="student"
       :headers="headers"
-      :items="students"
+      :items="scores"
       :server-items-length="totalItems"
       sort-by="calories"
       class="elevation-1"
@@ -12,7 +13,7 @@
       <v-toolbar
           flat
       >
-        <v-toolbar-title>Gestion des élèves</v-toolbar-title>
+        <v-toolbar-title>Gestion des note de {{student.lastname}} {{student.firstname}} </v-toolbar-title>
         <v-divider
             class="mx-4"
             inset
@@ -31,7 +32,7 @@
                 v-bind="attrs"
                 v-on="on"
             >
-              Nouvel élève
+              Nouvelle note
             </v-btn>
           </template>
           <v-card>
@@ -43,51 +44,16 @@
               <v-form ref="form" v-model="valid" lazy-validation>
               <v-container>
                 <v-row>
-                  <v-col
-                      cols="12"
-                  >
+                  <v-col cols="12">
                     <v-text-field
-                        v-model="editedItem.lastname"
-                        label="Nom"
+                        v-model.number="editedItem.subject"
+                        label="Matière"
                     ></v-text-field>
-                  </v-col>
-                  <v-col
-                      cols="12"
-                  >
                     <v-text-field
-                        v-model="editedItem.firstname"
-                        label="Prénom"
+                        type="number"
+                        v-model.number="editedItem.value"
+                        label="Note"
                     ></v-text-field>
-                  </v-col>
-                  <v-col
-                      cols="12"
-                  >
-                    <v-menu
-                        v-model="menu"
-                        :close-on-content-click="false"
-                        :nudge-right="40"
-                        transition="scale-transition"
-                        offset-y
-                        min-width="auto"
-                    >
-                      <template v-slot:activator="{ on, attrs }">
-                        <v-text-field
-                            v-model="editedItem.birthdate"
-                            label="Date de naissance"
-                            prepend-icon="mdi-calendar"
-                            readonly
-                            v-bind="attrs"
-                            v-on="on"
-                        ></v-text-field>
-                      </template>
-                      <v-date-picker
-                          v-model="editedItem.birthdate"
-                          @input="menu = false"
-                          show-week
-                          :max="getMax"
-                          :min="getMin"
-                      ></v-date-picker>
-                    </v-menu>
                   </v-col>
                 </v-row>
               </v-container>
@@ -150,107 +116,92 @@ import {addYears, format, parseISO} from 'date-fns';
 
 export default {
   name: "Datatable",
+  props:{
+    student: [Object,String],
+  },
   data: () => ({
     dialog: false,
     dialogDelete: false,
     headers: [
-      {
-        text: 'Nom',
-        align: 'start',
-        value: 'lastname',
-      },
-      {text: 'Prénom', value: 'firstname'},
-      {text: 'Date de naissance', value: 'birthdate'},
+      {text: 'Matière', align: 'start', value: 'subject',},
+      {text: 'Note', align: 'start', value: 'value',},
       {text: 'Actions', value: 'actions', sortable: false},
     ],
-    students: [],
+    scores: [],
     editedIndex: -1,
-    todayDate: new Date(),
     editedItem: {
-      lastname: '',
-      firstname: '',
-      birthdate: null,
+      subject: '',
+      value: '',
     },
     defaultItem: {
-      lastname: '',
-      firstname: '',
-      birthdate: null,
+      subject: '',
+      value: '',
     },
     totalItems: 0,
     itemsPerPage: 5,
     page: 1,
-    menu: false,
     valid: false,
-    nameRules: [
-      v => !!v || 'Une valeur est requise',
-      v => v.length <= 10 || 'La valeur ne peut être supérieure à 50 caractères',
-    ],
   }),
 
   computed: {
     formTitle() {
       return this.editedIndex === -1 ? 'Création' : 'Edition'
     },
-    getMin() {
-      return format(addYears(this.todayDate, -120), 'yyyy-MM-dd')
-    },
-    getMax() {
-      return format(this.todayDate, 'yyyy-MM-dd')
-    }
   },
 
   watch: {
+    student(val){
+      this.executeQuery()
+    },
     dialog(val) {
       val || this.close()
     },
     dialogDelete(val) {
       val || this.closeDelete()
     },
-  },
 
-  created() {
-    this.executeQuery()
   },
 
   methods: {
     async executeQuery() {
       try {
+        this.clearError()
         const response = await axios({
           method: 'GET',
-          url: 'students',
+          url: 'scores',
           params: {
             itemsPerPage: this.itemsPerPage,
-            page: this.page
+            page: this.page,
+            idStudent: this.student.id,
           }
         })
-        this.students = response.data.students.map(student => ({
-          ...student,
-          birthdate: this.formatDate(student.birthdate),
-        }))
+        this.scores = response.data.scores
         this.totalItems = response.data.totalItems
       } catch (err) {
-        this.onError(err.message)
+        this.scores = []
+        this.onError(err)
       }
     },
 
     editItem(item) {
-      this.editedIndex = this.students.indexOf(item)
+      this.editedIndex = this.scores.indexOf(item)
       this.editedItem = Object.assign({}, item)
       this.dialog = true
     },
 
     deleteItem(item) {
-      this.editedIndex = this.students.indexOf(item)
+      this.editedIndex = this.scores.indexOf(item)
       this.editedItem = Object.assign({}, item)
       this.dialogDelete = true
     },
 
     async deleteItemConfirm() {
+      this.clearError()
       await axios({
         method: 'DELETE',
-        url: 'students/' + this.editedItem.id,
+        url: 'scores/' + this.editedItem.id,
       })
-      this.students.splice(this.editedIndex, 1)
+      this.scores.splice(this.editedIndex, 1)
       this.closeDelete()
     },
 
@@ -272,27 +223,28 @@ export default {
 
     async save() {
       try {
+        this.clearError()
         if (this.editedIndex > -1) {
           const response = await axios({
             method: 'PUT',
-            url: 'students/' + this.editedItem.id,
+            url: 'scores/' + this.editedItem.id,
             data: {...this.editedItem}
           })
           response.data.birthdate = this.formatDate(response.data.birthdate),
-          Object.assign(this.students[this.editedIndex], response.data)
+          Object.assign(this.scores[this.editedIndex], response.data)
         } else {
           const response = await axios({
             method: 'POST',
-            url: 'students',
-            data: {...this.editedItem}
+            url: 'scores',
+            data: {...this.editedItem, idStudent: this.student.id,}
           })
-          this.students.push({
+          this.scores.push({
             ...response.data,
             birthdate:this.formatDate(response.data.birthdate),
           })
         }
       } catch (err) {
-        this.onError(err.message)
+        this.onError(err)
       }
       this.close()
     },
@@ -311,8 +263,20 @@ export default {
       return date ? format(date instanceof Date ? date : parseISO(date),'yyyy-MM-dd') : null
     },
 
-    onError(val) {
-      this.$emit('alert:change', val)
+    onError(err) {
+      if (err.response) {
+        console.log(err.response.data);
+        console.log(err.response.status);
+        console.log(err.response.headers);
+        this.$emit(
+            'alert:change',
+            '' + err.response.status + ': ' + err.response.data.detail,
+        )
+      }
+    },
+
+    clearError() {
+      this.$emit('alert:change', '',)
     }
   }
 }

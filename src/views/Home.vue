@@ -3,24 +3,31 @@
     <v-alert v-if="message" dense border="left" type="warning">
       {{message}}
     </v-alert>
-    <datatable @alert:change="onAlert"/>
+    <student-datatable @alert:change="onAlert" @student:change="onSelectStudent"/>
+    <score-datatable @alert:change="onAlert" :student="student"/>
   </div>
 </template>
 
 <script>
-import Datatable from "../components/Datatable";
+import StudentDatatable from "../components/StudentDatatable";
+import ScoreDatatable from "../components/ScoreDatatable";
 
 export default {
   name: "Home",
   data: () => ({
-    message: ''
+    message: '',
+    student: '',
   }),
   components: {
-    Datatable
+    StudentDatatable,
+    ScoreDatatable,
   },
   methods:{
     onAlert(val) {
       this.message = val
+    },
+    onSelectStudent(obj) {
+      this.student = obj
     }
   }
 }
