@@ -1,24 +1,14 @@
 # ubitransport-app
+##Installation
+Clone the project and navigate to the project folder
+`cd ubitransport-app;`
 
-## Project setup
-```
-npm install
-```
+Run
 
-### Compiles and hot-reloads for development
 ```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
+npm install;
+npm run serve;
 ```
 
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+Make sure ubitransport-api is running
+Update .env.development.local accordingly
