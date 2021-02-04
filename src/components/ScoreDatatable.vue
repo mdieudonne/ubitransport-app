@@ -125,9 +125,10 @@ export default {
     dialog: false,
     dialogDelete: false,
     headers: [
+      {text: 'Id', align: 'start', value: 'id',},
       {text: 'Matière', align: 'start', value: 'subject',},
       {text: 'Note', align: 'start', value: 'value',},
-      {text: 'Actions', value: 'actions', sortable: false},
+      {text: 'Actions', align: 'end', value: 'actions', sortable: false},
     ],
     scores: [],
     editedIndex: -1,

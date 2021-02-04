@@ -163,14 +163,11 @@ export default {
     dialog: false,
     dialogDelete: false,
     headers: [
-      {
-        text: 'Nom',
-        align: 'start',
-        value: 'lastname',
-      },
+      {text: 'Id', align: 'start', value: 'id',},
+      {text: 'Nom', value: 'lastname',},
       {text: 'Prénom', value: 'firstname'},
       {text: 'Date de naissance', value: 'birthdate'},
-      {text: 'Actions', value: 'actions', sortable: false},
+      {text: 'Actions', align: 'end', value: 'actions', sortable: false},
     ],
     students: [],
     editedIndex: -1,
