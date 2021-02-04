@@ -61,7 +61,7 @@ export default {
         this.message = ''
         const response = await axios({
           method: 'GET',
-          url: 'student/' + this.student.id + '/getAverage',
+          url: 'students/' + this.student.id + '/getAverage',
           params: {},
         })
         this.averageStudentScore = response.data
