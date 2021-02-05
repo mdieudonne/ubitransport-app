@@ -1,5 +1,7 @@
 # ubitransport-app
-##Installation
+
+## Installation
+
 Clone the project and navigate to the project folder
 `cd ubitransport-app;`
 
@@ -10,5 +12,6 @@ npm install;
 npm run serve;
 ```
 
-Make sure ubitransport-api is running
+Make sure ubitransport-api is running.
+
 Update .env.development.local accordingly
